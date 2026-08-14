@@ -34,54 +34,89 @@ CRITICAL RULES FOR PROMPT CONSTRUCTION:
 - NEVER use the word "printed" anywhere in the prompt.
 - NEVER use the word "CRT" anywhere in the prompt.
 - NEVER say "matte paper", "dark paper", "thermal paper" — the model renders a literal photograph of paper on a table.
+- NEVER say "vertical smearing", "film grain across the entire image", "heavy grain", "dense vertical-streak texture", or "striations filling every band". Each of these renders the fuzzy sweater — every band woven from thousands of tiny hairs.
 - The image must fill the frame edge to edge. No borders, no margins, no visible edges.
+
+DO NOT re-derive the style each roll. The structure paragraph below is locked. Swap ONLY the signal narrative.
+
+WHAT MAKES IT READ AS A SPECTROGRAM (non-negotiable):
+- MANY fine, thin, SHARP, high-contrast parallel horizontal harmonic lines stacked closely, brightest and densest in the center rows, fading toward the top and bottom of the zone, with dark navy visible between individual lines.
+- Fine sharp vertical striations THROUGH the lines = amplitude changing across time.
+- GENEROUS empty flat dark navy negative space above and below the signal zone. The signal is a horizontal band, NOT wall-to-wall.
+- Crisp, thin, sharp, high contrast — like an FFT readout.
+
+FAILURE MODES (each is a real past miss):
+- Wall-to-wall soft striation covering the whole frame = fuzzy sweater.
+- Flat uninterrupted solid ribbons or stripes = doesn't read as a spectrogram.
+- Glossy 3D tubes, pipes, or vector shapes = overcorrection.
+- Hard full-height vertical seam = split screen. A THIN, low-contrast green handover marker is fine and matches `the-real-tokenomics.webp`. Do NOT try to "fix" it by asking for a shorter zone-height marker: FLUX renders that as a saturated pure-green bar that becomes the brightest object in the frame, ignores off-center placement, and loses the thin-line structure. Leave it alone.
 
 PROMPT TEMPLATE:
 
 ```
 This image contains absolutely no text, no numbers, no letters, no labels, no axes, no tick marks, no legends, no characters of any kind.
 
-Abstract digital artwork of a spectrogram visualization filling the entire frame edge to edge. Navy #1D2733 background covers the full canvas with no borders or margins. Horizontal direction represents time. Vertical direction represents frequency. Brightness represents amplitude.
+A real audio spectrogram / FFT frequency analysis readout on a deep flat navy #1D2733 background, 16:9, filling the frame edge to edge with no borders. Horizontal direction is time, vertical direction is frequency, brightness is amplitude.
 
-{{SIGNAL_EVENT — 3-4 sentences from the library below. Always mention BOTH cyan #0EA5C9 AND amber #A97C40 explicitly. Green #5B9B84 only where they overlap.}}
+The signal occupies a horizontal zone across the middle of the frame, with GENEROUS empty flat dark navy negative space above and below it. The zone is built from MANY fine, thin, SHARP, high-contrast parallel horizontal harmonic lines stacked closely on top of one another, brightest and densest in the center rows and fading out toward the top and bottom edges of the zone, with dark navy visible between the individual lines. Fine sharp vertical striations run through the lines giving the sense of amplitude changing across time, some columns brighter, some quieter. Crisp and detailed like a frequency analysis readout, not soft, not blurry.
 
-{{COLOR_EMPHASIS — "Cyan #0EA5C9 bands are brighter and more prominent than amber" OR "Amber #A97C40 bands are brighter and more prominent than cyan" OR "Cyan and amber bands compete at roughly equal brightness"}}
+{{SIGNAL_NARRATIVE — 3-4 sentences. Which color dominates where, and the green overlap. Adapt the chosen Signal Event(s) from the library below into harmonic-line language: say "cyan #0EA5C9 harmonic lines dominate the LEFT" rather than "a cyan band". Always BOTH cyan #0EA5C9 AND amber #A97C40. Green #5B9B84 only at the overlap.}}
 
-The visualization has subtle horizontal scan line texture and slight vertical smearing where signals are strong. Colors are flat and opaque. No glow, no bloom, no light emission, no luminosity, no shine, no reflective surfaces. Film grain across the entire image.
+{{COLOR_EMPHASIS — "Cyan #0EA5C9 lines are brighter and more prominent than amber" OR "Amber #A97C40 lines are brighter and more prominent than cyan" OR "Cyan and amber lines compete at roughly equal brightness"}}
 
-Absolutely no text, numbers, letters, axis labels, tick marks, grid lines, legends, UI elements, or any readable characters anywhere in the image. No people, faces, or devices. Abstract only. 16:9 aspect ratio.
+The lines are crisp, thin, and sharp with strong contrast against the dark navy. No soft fuzz, no woven or knitted fabric texture, no sweater, no flat uninterrupted solid ribbons or stripes, no blur, no haze, no glow, no bloom, no shine, no reflective surfaces, no rounded 3D tubes or cables. At most a barely perceptible film grain.
+
+Absolutely no text, numbers, letters, axis labels, tick marks, grid lines, legends, UI elements, or any readable characters anywhere in the image. No hard full-height vertical seam splitting the image in two. No people, faces, or devices. Abstract only. 16:9 aspect ratio.
 ```
+
+GOLD-STANDARD REFERENCES: `Heroes/the-real-tokenomics.webp` and `Heroes/cuda-is-the-x86-of-ai.webp`. Look at one before rolling.
 
 ### 4. Call API
 
+Output goes to `Heroes/<post-slug>.webp` in the sideband.pub repo — never next to the source markdown, never a timestamped name in the current directory. Derive the slug from the post title (lowercase, hyphens, drop apostrophes and punctuation), matching the existing files in `Heroes/`.
+
+Use python, not `curl -d`. The prompt contains quotes and newlines that break shell quoting.
+
 ```bash
-RESULT=$(curl -s -X POST \
-  -H "Authorization: Bearer $REPLICATE_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -H "Prefer: wait" \
-  -d '{
-    "input": {
-      "prompt": "YOUR_PROMPT_HERE",
-      "aspect_ratio": "16:9",
-      "output_format": "webp",
-      "output_quality": 95
-    }
-  }' \
-  https://api.replicate.com/v1/models/black-forest-labs/flux-2-pro/predictions)
+python3 - <<'PY'
+import json, os, urllib.request
 
-IMAGE_URL=$(echo "$RESULT" | python3 -c "import sys,json; r=json.load(sys.stdin); o=r.get('output',''); print(o if isinstance(o,str) else o[0] if isinstance(o,list) else '')" 2>/dev/null)
+prompt = """PASTE_THE_BUILT_PROMPT_HERE"""
+slug = "post-slug-here"
 
-FILENAME="hero-$(date +%Y%m%d-%H%M%S).webp"
-curl -s -o "$FILENAME" "$IMAGE_URL"
-echo "Downloaded: $FILENAME"
+body = json.dumps({"input": {"prompt": prompt, "aspect_ratio": "16:9",
+                             "output_format": "webp", "output_quality": 95}}).encode()
+req = urllib.request.Request(
+    "https://api.replicate.com/v1/models/black-forest-labs/flux-2-pro/predictions",
+    data=body,
+    headers={"Authorization": "Bearer " + os.environ["REPLICATE_API_TOKEN"],
+             "Content-Type": "application/json", "Prefer": "wait"})
+r = json.load(urllib.request.urlopen(req, timeout=300))
+out = r.get("output")
+url = out if isinstance(out, str) else (out[0] if isinstance(out, list) and out else None)
+print("status:", r.get("status"), "| error:", r.get("error"))
+if not url: raise SystemExit("no output url")
+dest = f"Heroes/{slug}.webp"
+urllib.request.urlretrieve(url, dest)
+print("saved:", dest, os.path.getsize(dest), "bytes")
+PY
 ```
 
+Before overwriting an existing hero, copy it to the scratchpad first. A re-roll changes the whole composition, and the previous render is often the better one.
+
 ### 5. Present result
-Signal event used, 1-sentence rationale, file path. Offer to try different event.
+
+1. `xdg-open Heroes/<slug>.webp` — always open it.
+2. Read the file back with the Read tool and LOOK at it before saying anything about it. Never describe a render you have not viewed.
+3. Report: signal event used, 1-sentence rationale, file path, and any flaw you can actually see.
+
+Offer to try a different event. If the composition is good and only the texture or a detail is wrong, prefer a FLUX Kontext edit over a re-roll — a text-to-image re-roll rerolls the whole shape.
 
 ## Signal Event Library
 
 These are building blocks, not final descriptions. Use one directly for straightforward posts. Compose two into a custom narrative for posts with a turn or transformation — write the stitched description yourself, emphasizing contrast and dynamic range between the two states.
+
+IMPORTANT: these blocks supply the NARRATIVE only — which color goes where and what happens across time. The STRUCTURE always comes from the locked template above. Where a block says "band", write "harmonic lines" in the actual prompt. Never paste a block in verbatim.
 
 ### BROADBAND SPIKE
 When: Discovery, sudden arrival, instant capability, "something just happened"
