@@ -5,22 +5,22 @@ description: Use when the user asks for a Sideband hero image, post image, /side
 
 # Sideband Hero
 
-Every hero is the same instrument as `Heroes/the-real-tokenomics.webp`. Horizontal = time. Vertical = frequency. Brightness = amplitude. Cyan `#0EA5C9` is the signal. Amber `#A97C40` is the stakes. Green `#5B9B84` appears only where they meet. Navy `#1D2733` is the field.
+Every hero is a spectrogram. Horizontal = time. Vertical = frequency. Brightness = amplitude. Cyan `#0EA5C9` is the signal. Amber `#A97C40` is the stakes. Green `#5B9B84` appears only where they meet. Navy `#1D2733` is the field.
 
-The reference image is the style. Do not re-describe the instrument in the prompt. Do not add new bans after a fail.
+Look at existing files in `Heroes/` before a roll. No single file is the style. Do not add new bans after a fail.
 
 `REPLICATE_API_TOKEN` must already be in the environment. Cost is about $0.05 per roll.
 
 ## Loop
 
 1. Read the post.
-2. Open `Heroes/the-real-tokenomics.webp` with the Read tool. That file is the pass bar.
+2. Open two or three files in `Heroes/` with the Read tool. Calibrate. Pick a `--ref` only when one hero already tells this post's story.
 3. Pick register, color emphasis, and 1–2 events. Stay silent.
 4. Write the short prompt below. Swap only the story.
-5. From the sideband.pub repo root, run the skill script. Never raw `curl`. Never skip `input_images`.
+5. From the sideband.pub repo root, run the skill script. Never raw `curl`.
 
 ```bash
-python3 .claude/skills/sideband-hero/generate.py <slug> <<'PROMPT'
+python3 .claude/skills/sideband-hero/generate.py <slug> [--ref Heroes/<analog>.webp] <<'PROMPT'
 <prompt>
 PROMPT
 xdg-open Heroes/<slug>.webp
@@ -38,7 +38,7 @@ Four parts. Nothing else.
 ```
 This image contains absolutely no text, no numbers, no letters, no labels, no axes, no tick marks, no legends, no characters of any kind.
 
-Same instrument as the reference. Deep navy #1D2733. 16:9. Edge to edge. Copy the reference texture exactly. Do not copy the reference colors or the green marker.
+Deep navy #1D2733. 16:9. Edge to edge. A spectrogram. Horizontal is time. Brightness is amplitude.
 
 {{STORY — 2–3 sentences. Which color dominates where, left to right. Both cyan #0EA5C9 and amber #A97C40. Green #5B9B84 only where they meet. Write "harmonic lines", never "band".}}
 
@@ -52,17 +52,18 @@ The script rejects these words in the prompt: `paper`, `printed`, `crt`, `readou
 
 ## Gates
 
-Look at the render. Compare it to `the-real-tokenomics.webp`. Reject if any of these are true:
+Look at the render. Compare it to the `Heroes/` set. Reject if any of these are true:
 
 | Fail | What you see |
 |---|---|
 | Text | Numbers, letters, axes, sidebar, scale, UI |
 | Stamp | A boxed strip floating in empty navy |
-| Sweater | Knit, barcode, or woven vertical hash filling the frame |
-| Ribbons | Flat solid stripes with no hashed amplitude |
-| Copy | Same colors and green marker as the reference |
+| Coil | Heating-coil, barcode, or knit wrapping the frame |
+| Sweater | Soft woven hash with no horizontal harmonic structure |
+| Ribbons | Flat solid stripes with no amplitude texture |
+| Copy | A clone of the `--ref` file |
 
-Pass looks like the reference: hashed horizontal lines, navy between them, faint lines fading toward the edges, both cyan and amber.
+Pass looks like a Sideband hero: spectrogram, both cyan and amber, navy field, no text.
 
 ## Events
 

@@ -2,7 +2,7 @@
 """Generate a Sideband hero. cwd must be the sideband.pub repo.
 
 Usage:
-  python3 generate.py <slug> <<'PROMPT'
+  python3 generate.py <slug> [--ref Heroes/some.webp] <<'PROMPT'
   ...prompt text...
   PROMPT
 """
@@ -30,15 +30,22 @@ BANNED = (
     "generous",
     "fft",
 )
-REF = Path("Heroes/the-real-tokenomics.webp")
 SCRATCH = Path("/tmp/sideband-hero-scratch")
 API = "https://api.replicate.com/v1/models/black-forest-labs/flux-2-pro/predictions"
 
 
 def main() -> None:
-    if len(sys.argv) != 2:
-        raise SystemExit("usage: generate.py <slug>")
-    slug = sys.argv[1]
+    args = sys.argv[1:]
+    ref = None
+    if "--ref" in args:
+        i = args.index("--ref")
+        if i + 1 >= len(args):
+            raise SystemExit("usage: generate.py <slug> [--ref Heroes/some.webp]")
+        ref = Path(args[i + 1])
+        del args[i : i + 2]
+    if len(args) != 1:
+        raise SystemExit("usage: generate.py <slug> [--ref Heroes/some.webp]")
+    slug = args[0]
     prompt = sys.stdin.read().strip()
     if not prompt:
         raise SystemExit("empty prompt on stdin")
@@ -50,8 +57,8 @@ def main() -> None:
     token = os.environ.get("REPLICATE_API_TOKEN")
     if not token:
         raise SystemExit("REPLICATE_API_TOKEN is not set")
-    if not REF.is_file():
-        raise SystemExit(f"missing reference: {REF} (cwd must be sideband.pub)")
+    if ref is not None and not ref.is_file():
+        raise SystemExit(f"missing reference: {ref}")
 
     dest = Path("Heroes") / f"{slug}.webp"
     dest.parent.mkdir(exist_ok=True)
@@ -60,18 +67,18 @@ def main() -> None:
         shutil.copy2(dest, SCRATCH / dest.name)
         print("scratch:", SCRATCH / dest.name)
 
-    data_uri = "data:image/webp;base64," + base64.b64encode(REF.read_bytes()).decode()
-    body = json.dumps(
-        {
-            "input": {
-                "prompt": prompt,
-                "input_images": [data_uri],
-                "aspect_ratio": "16:9",
-                "output_format": "webp",
-                "output_quality": 95,
-            }
-        }
-    ).encode()
+    inp = {
+        "prompt": prompt,
+        "aspect_ratio": "16:9",
+        "output_format": "webp",
+        "output_quality": 95,
+    }
+    if ref is not None:
+        inp["input_images"] = [
+            "data:image/webp;base64," + base64.b64encode(ref.read_bytes()).decode()
+        ]
+        print("ref:", ref)
+    body = json.dumps({"input": inp}).encode()
     req = urllib.request.Request(
         API,
         data=body,
